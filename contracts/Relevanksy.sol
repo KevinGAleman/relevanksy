@@ -99,7 +99,7 @@ contract Relevanksy is Context, IBEP20, Ownable, ReentrancyGuard {
     }
 
     modifier onlyDevs() {
-        require(_authorizedDevs[_msgSender()], "Ownable: caller is not the owner");
+        require(_authorizedDevs[_msgSender()], "Error: caller is not a core dev");
         _;
     }
 
@@ -217,6 +217,8 @@ contract Relevanksy is Context, IBEP20, Ownable, ReentrancyGuard {
 
         require(newMaxTx != _maxTx, "Cannot set new max transaction to the same value as current max transaction");
         require(newMaxTx >= _totalSupply.mul(5).div(1000), "Cannot set max transaction lower than 0.5 percent");
+
+        _maxTx = newMaxTx;
     }
 
     function includeInFees(address account) public onlyOwner {
