@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: MIT
 
 /**
+    Taxable.sol
 
+    A contract designed to make a Tradable token that also has
+    taxes, which go to development, marketing, and liquidity.
+    These taxes are adjustable, and can be split differently
+    for buys and sells.
+
+    The constructor requires the instantiator to set a max dev
+    fee and a max tax limit, which will enable the developer
+    to inform their community that there is a limit to how
+    high the token can be taxed.
 */
 
 pragma solidity ^0.8.0;
@@ -199,34 +209,34 @@ abstract contract Taxable is Context, Ownable, Tradable {
         uint256 totalCollected = _devTokensCollected.add(_marketingTokensCollected).add(_liqTokensCollected);
         require(totalCollected > 0, "No tokens available to swap");
 
-        uint256 initialBNB = address(this).balance;
+        uint256 initialFunds = address(this).balance;
 
         uint256 halfLiq = _liqTokensCollected.div(2);
         uint256 otherHalfLiq = _liqTokensCollected.sub(halfLiq);
 
         uint256 totalAmountToSwap = _devTokensCollected.add(_marketingTokensCollected).add(halfLiq);
 
-        swapTokensForBNB(totalAmountToSwap);
+        swapTokensForNative(totalAmountToSwap);
 
-        uint256 newBNB = address(this).balance.sub(initialBNB);
+        uint256 newFunds = address(this).balance.sub(initialFunds);
 
-        uint256 liqBNB = newBNB.mul(halfLiq).div(totalAmountToSwap);
-        uint256 marketingBNB = newBNB.mul(_marketingTokensCollected).div(totalAmountToSwap);
-        uint256 devBNB = newBNB.sub(liqBNB).sub(marketingBNB);
+        uint256 liqFunds = newFunds.mul(halfLiq).div(totalAmountToSwap);
+        uint256 marketingFunds = newFunds.mul(_marketingTokensCollected).div(totalAmountToSwap);
+        uint256 devFunds = newFunds.sub(liqFunds).sub(marketingFunds);
 
-        addLiquidity(otherHalfLiq, liqBNB);
-        IBEP20(WBNB).transfer(marketingAddress, marketingBNB);
-        IBEP20(WBNB).transfer(devAddress, devBNB);
+        addLiquidity(otherHalfLiq, liqFunds);
+        IBEP20(router.WETH()).transfer(marketingAddress, marketingFunds);
+        IBEP20(router.WETH()).transfer(devAddress, devFunds);
 
         _devTokensCollected = 0;
         _marketingTokensCollected = 0;
         _liqTokensCollected = 0;
     }
 
-    function swapTokensForBNB(uint256 tokenAmount) private {
+    function swapTokensForNative(uint256 tokenAmount) private {
         address[] memory path = new address[](2);
         path[0] = address(this);
-        path[1] = WBNB;
+        path[1] = router.WETH();
 
         approve(address(router), tokenAmount);
 

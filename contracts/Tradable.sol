@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 /**
+    Tradable.sol
 
+    A contract designed to simplify creating a DEX-tradable token,
+    with an adjustable max wallet and max transaction amount.
 */
 
 pragma solidity ^0.8.0;
@@ -35,8 +38,6 @@ abstract contract Tradable is Context, IBEP20, Ownable {
     IDEXRouter public router;
     address public pair;
     //
-    address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
-    //
     mapping (address => uint256) public _balances;
     //
     mapping (address => mapping (address => uint256)) public _allowances;
@@ -54,8 +55,8 @@ abstract contract Tradable is Context, IBEP20, Ownable {
         _maxTx = tokenDistribution.maxTx;
 
         router = IDEXRouter(0x10ED43C718714eb63d5aA57B78B54704E256024E); //Mainnet
-        //IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1); //Testnet         // Create a uniswap pair for this new token
-        pair = IDEXFactory(router.factory()).createPair(WBNB, address(this));
+        //IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1); //Testnet 
+        pair = IDEXFactory(router.factory()).createPair(router.WETH(), address(this)); // Create a uniswap pair for this new token
 
         _isExcludedFromMaxBalance[owner()] = true;
         _isExcludedFromMaxBalance[address(this)] = true;

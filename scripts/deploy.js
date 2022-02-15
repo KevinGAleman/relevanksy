@@ -1,41 +1,14 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional 
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
 
 async function main() {
-    // Hardhat always runs the compile task when running scripts with its command
-    // line interface.
-    //
-    // If this script is run directly using `node` you may want to call compile 
-    // manually to make sure everything is compiled
-    // await hre.run('compile');
-
-    console.log("Deploying UniswapV2Factory on", hre.network.name, "network...")
-    // This is my account address
-    const feeSetterAddress = "0x1BfC443DE53B8B1c3f488DCf797f412f36552c07"
-    const UniswapV2Factory = await hre.ethers.getContractFactory("UniswapV2Factory");
-    const uniswapV2Factory = await UniswapV2Factory.deploy(feeSetterAddress);
-    await uniswapV2Factory.deployed();
-
-    console.log("UniswapV2Factory deployed to:", uniswapV2Factory.address);
-
-    let token1Address, token2Address;
-    if (hre.network.name === "hardhat")
+    if (hre.network.name === "localhost")
     {
-        console.log("Deploying Token1 and Token2")
-        const Token1 = await hre.ethers.getContractFactory("Token1");
-        const Token2 = await hre.ethers.getContractFactory("Token2");
-        const token1Factory = await Token1.deploy();
-        const token2Factory = await Token2.deploy();
+        console.log("Deploying Token1 and Token2");
+        const Relevanksy = await hre.ethers.getContractFactory("Relevanksy");
+        const relevanksyFactory = await Relevanksy.deploy();
+        await relevanksyFactory.deployed();
 
-        console.log("Token 1 is deployed to address: ", token1Factory.address)
-        console.log("Token 2 is deployed to address: ", token2Factory.address)
-    
-        token1Address = token1Factory.address
-        token2Address = token2Factory.address  
+        console.log("Relevanksy is deployed to address: ", relevanksyFactory.address)
     }
     else if (hre.network.name == "ropstenTest")
     {
@@ -48,24 +21,11 @@ async function main() {
         throw new Error(`Invalid network ${hre.network.name}`)
     }
 
-    console.log(`Creating factory pair: [${token1Address}, ${token2Address}]`)
-
-    let pairAddress = await uniswapV2Factory.createPair(token1Address, token2Address)
-    console.log(`UniswapV2Pair address: `, pairAddress)
-    pairAddress = await uniswapV2Factory.getPair(token1Address, token2Address);
-    console.log(`UniswapV2Factory.getPair(token1: ${token1Address}, token2: ${token2Address})`, pairAddress)
-
     const [deployer] = await hre.ethers.getSigners();
     const accountBalance = await deployer.getBalance();
 
     console.log("Deploying contracts with account: ", deployer.address);
     console.log("Account balance: ", accountBalance.toString());
-
-    const relevanksyFactory = await hre.ethers.getContractFactory("Relevanksy");
-    const relevanksy = await relevanksyFactory.deploy();
-    await relevanksy.deployed();
-
-    console.log("Relevanksy address: ", relevanksy.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

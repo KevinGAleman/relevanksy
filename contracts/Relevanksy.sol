@@ -14,7 +14,6 @@
     not to exceed 12% total (incl dev tax)
  */
 
-
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
