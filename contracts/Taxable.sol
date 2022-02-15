@@ -20,9 +20,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./IBEP20.sol";
-import "./IDEXFactory.sol";
-import "./IDEXRouter.sol";
 import "./Tradable.sol";
 
 abstract contract Taxable is Context, Ownable, Tradable {
@@ -225,8 +222,8 @@ abstract contract Taxable is Context, Ownable, Tradable {
         uint256 devFunds = newFunds.sub(liqFunds).sub(marketingFunds);
 
         addLiquidity(otherHalfLiq, liqFunds);
-        IBEP20(router.WETH()).transfer(marketingAddress, marketingFunds);
-        IBEP20(router.WETH()).transfer(devAddress, devFunds);
+        IERC20(router.WETH()).transfer(marketingAddress, marketingFunds);
+        IERC20(router.WETH()).transfer(devAddress, devFunds);
 
         _devTokensCollected = 0;
         _marketingTokensCollected = 0;

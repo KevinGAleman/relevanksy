@@ -10,14 +10,14 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./IBEP20.sol";
 import "./IDEXFactory.sol";
 import "./IDEXRouter.sol";
 
-abstract contract Tradable is Context, IBEP20, Ownable {
+abstract contract Tradable is Context, IERC20, Ownable {
     using SafeMath for uint256;
 	using Address for address;
 
@@ -119,10 +119,10 @@ abstract contract Tradable is Context, IBEP20, Ownable {
     }
 
     function totalSupply() external view override returns (uint256) { return _totalSupply; }
-    function decimals() external view override returns (uint8) { return _decimals; }
-    function symbol() external view override returns (string memory) { return _symbol; }
-    function name() external view override returns (string memory) { return _name; }
-    function getOwner() external view override returns (address) { return owner(); }
+    function decimals() external view returns (uint8) { return _decimals; }
+    function symbol() external view returns (string memory) { return _symbol; }
+    function name() external view returns (string memory) { return _name; }
+    function getOwner() external view returns (address) { return owner(); }
     function balanceOf(address account) public view override returns (uint256) { return _balances[account]; }
     function allowance(address owner, address spender) external view override returns (uint256) { return _allowances[owner][spender]; }
 

@@ -9,7 +9,6 @@
     This contract uses Chainlink VRF to guarantee random winners are selected.
  */
 
-
 pragma solidity ^0.8.0;
 
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
@@ -53,7 +52,7 @@ contract NFTRaffle is VRFConsumerBase, Ownable {
     }
 
     function extendRaffle() external onlyOwner {
-        
+
     }
 
     function enterRaffle(uint256 numEntries) external {

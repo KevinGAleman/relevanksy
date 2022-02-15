@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 /**
+    DevOwnable.sol
 
+    A contract designed to add the `onlyDevs` modifier,
+    which will allow a set of addresses to run particular
+    functions on the contract, and these addresses can
+    be added or removed in case of a change in dev team.
 */
 
 pragma solidity ^0.8.0;

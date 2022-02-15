@@ -22,7 +22,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./DevOwnable.sol";
-import "./IBEP20.sol";
 import "./Taxable.sol";
 import "./Tradable.sol";
 
@@ -30,7 +29,7 @@ contract Relevanksy is Context, Ownable, DevOwnable, Taxable {
 	using SafeMath for uint256;
 	using Address for address;
 
-    string private _RSYname = "Relevansky";
+    string private _RSYname = "Relevanksy";
     string private _RSYsymbol = "RSY";
     // 9 Decimals
     uint8 private _RSYdecimals = 9;
