@@ -125,6 +125,8 @@ abstract contract Tradable is Context, IERC20, Ownable {
     function getOwner() external view returns (address) { return owner(); }
     function balanceOf(address account) public view override returns (uint256) { return _balances[account]; }
     function allowance(address owner, address spender) external view override returns (uint256) { return _allowances[owner][spender]; }
+    function maxBalance() external view returns (uint256) { return _maxBalance; }
+    function maxTx() external view returns (uint256) { return _maxTx; }
 
     function approve(address spender, uint256 amount) public override returns (bool) {
         _approve(_msgSender(), spender, amount);
