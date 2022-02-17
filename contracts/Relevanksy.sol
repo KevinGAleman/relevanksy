@@ -53,10 +53,13 @@ contract Relevanksy is Context, Ownable, Taxable {
     uint8 private _RdevSellFee = 2;
     uint8 private _RmarketingSellFee = 31;
     uint8 private _RliqSellFee = 66;
+    // TODO
+    address payable _RdevAddress = address(0x0);
+    address payable _RmarketingAddress = address(0x0);
 
     constructor () 
-    Taxable(_Rsymbol, _Rname, _RtokenDistribution, _RdevBuyFee, _RmarketingBuyFee, _RliqBuyFee, _RdevSellFee, 
-            _RmarketingSellFee, _RliqSellFee, _RmaxFees, _RmaxDevFee, _RliquifyThreshhold) {
+    Taxable(_Rsymbol, _Rname, _RtokenDistribution, _RdevAddress, _RmarketingAddress, _RdevBuyFee, _RmarketingBuyFee, 
+            _RliqBuyFee, _RdevSellFee, _RmarketingSellFee, _RliqSellFee, _RmaxFees, _RmaxDevFee, _RliquifyThreshhold) {
         _balances[_msgSender()] = _totalSupply;
         emit Transfer(address(0), _msgSender(), _totalSupply);
     }

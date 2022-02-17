@@ -28,8 +28,8 @@ abstract contract Taxable is Ownable, Tradable {
     uint8 constant BUYTX = 1;
     uint8 constant SELLTX = 2;
     //
-    address payable public marketingAddress;
-    address payable public devAddress;
+    address payable public _devAddress;
+    address payable public _marketingAddress;
     //
     uint256 public _liquifyThreshhold;
     bool inSwapAndLiquify;
@@ -61,7 +61,9 @@ abstract contract Taxable is Ownable, Tradable {
 
     constructor(string memory symbol, 
                 string memory name, 
-                TokenDistribution memory tokenDistribution, 
+                TokenDistribution memory tokenDistribution,
+                address payable devAddress,
+                address payable marketingAddress,
                 uint8 devBuyFee,
                 uint8 marketingBuyFee,
                 uint8 liqBuyFee,
@@ -72,6 +74,8 @@ abstract contract Taxable is Ownable, Tradable {
                 uint8 maxDevFee, 
                 uint256 liquifyThreshhold)
     Tradable(symbol, name, tokenDistribution) {
+        _devAddress = devAddress;
+        _marketingAddress = marketingAddress;
         _devBuyFee = devBuyFee;
         _marketingBuyFee = marketingBuyFee;
         _liqBuyFee = liqBuyFee;
@@ -89,13 +93,13 @@ abstract contract Taxable is Ownable, Tradable {
     }
 
     function setMarketingAddress(address payable newMarketingAddress) external onlyOwner() {
-        require(newMarketingAddress != marketingAddress);
-        marketingAddress = newMarketingAddress;
+        require(newMarketingAddress != _marketingAddress);
+        _marketingAddress = newMarketingAddress;
     }
 
     function setDevAddress(address payable newDevAddress) external onlyOwner() {
-        require(newDevAddress != devAddress);
-        devAddress = newDevAddress;
+        require(newDevAddress != _devAddress);
+        _devAddress = newDevAddress;
     }
 
     function includeInFees(address account) public onlyOwner {
