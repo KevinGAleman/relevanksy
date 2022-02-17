@@ -16,50 +16,36 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Tradable.sol";
 
-abstract contract Taxable is Context, Ownable, Tradable {
+abstract contract Taxable is Ownable, Tradable {
     using SafeMath for uint256;
-	using Address for address;
 
     event SetBuyFees(uint256 devAmount, uint256 marketingAmount, uint256 liqAmount); 
     event SetSellFees(uint256 devAmount, uint256 marketingAmount, uint256 liqAmount); 
 
-    enum TxType {
-        NONE,
-        BUY,
-        SELL
-    }
-
-    struct BuyFees {
-        uint8 devFee;
-        uint8 marketingFee;
-        uint8 liqFee;
-        uint8 total;
-    }
-
-    struct SellFees {
-        uint8 devFee;
-        uint8 marketingFee;
-        uint8 liqFee;
-        uint8 total;
-    }
-
+    uint8 constant BUYTX = 1;
+    uint8 constant SELLTX = 2;
+    //
     address payable public marketingAddress;
     address payable public devAddress;
     //
-    uint256 private _liquifyThreshhold;
+    uint256 public _liquifyThreshhold;
     bool inSwapAndLiquify;
     //
-    uint8 private _maxFees;
-    uint8 private _maxDevFee;
+    uint8 public _maxFees;
+    uint8 public _maxDevFee;
     //
-    BuyFees private _buyFees;
-    SellFees private _sellFees;
+    uint8 public _devBuyFee;
+    uint8 public _marketingBuyFee;
+    uint8 public _liqBuyFee;
+    uint8 public _totalBuyFees;
+    //
+    uint8 public _devSellFee;
+    uint8 public _marketingSellFee;
+    uint8 public _liqSellFee;
+    uint8 public _totalSellFees;
     //
     uint256 private _devTokensCollected;
     uint256 private _marketingTokensCollected;
@@ -73,10 +59,27 @@ abstract contract Taxable is Context, Ownable, Tradable {
         inSwapAndLiquify = false;
     }
 
-    constructor(string memory symbol, string memory name, TokenDistribution memory tokenDistribution, BuyFees memory buyFees, SellFees memory sellFees, uint8 maxFees, uint8 maxDevFee, uint256 liquifyThreshhold)
+    constructor(string memory symbol, 
+                string memory name, 
+                TokenDistribution memory tokenDistribution, 
+                uint8 devBuyFee,
+                uint8 marketingBuyFee,
+                uint8 liqBuyFee,
+                uint8 devSellFee,
+                uint8 marketingSellFee,
+                uint8 liqSellFee,
+                uint8 maxFees, 
+                uint8 maxDevFee, 
+                uint256 liquifyThreshhold)
     Tradable(symbol, name, tokenDistribution) {
-        _buyFees = buyFees;
-        _sellFees = sellFees;
+        _devBuyFee = devBuyFee;
+        _marketingBuyFee = marketingBuyFee;
+        _liqBuyFee = liqBuyFee;
+        _totalBuyFees = devBuyFee + marketingBuyFee + liqBuyFee;
+        _devSellFee = devSellFee;
+        _marketingSellFee = marketingSellFee;
+        _liqSellFee = liqSellFee;
+        _totalSellFees = devSellFee + marketingSellFee + liqSellFee;
         _maxFees = maxFees;
         _maxDevFee = maxDevFee;
         _liquifyThreshhold = liquifyThreshhold;
@@ -103,24 +106,32 @@ abstract contract Taxable is Context, Ownable, Tradable {
         _isExcludedFromFees[account] = true;
     }
 
-    function setBuyFees(uint8 newDevBuyFee, uint8 newMarketingBuyFee, uint8 newLiquidityBuyFee) external onlyOwner {
-        uint8 newTotalBuyFees = newDevBuyFee + newMarketingBuyFee + newLiquidityBuyFee;
+    function setBuyFees(uint8 newDevBuyFee, uint8 newMarketingBuyFee, uint8 newLiqBuyFee) external onlyOwner {
+        uint8 newTotalBuyFees = newDevBuyFee + newMarketingBuyFee + newLiqBuyFee;
         require(!inSwapAndLiquify, "inSwapAndLiquify");
         require(newDevBuyFee <= _maxDevFee, "Cannot set dev fee higher than max");
         require(newTotalBuyFees <= _maxFees, "Cannot set total buy fees higher than max");
 
-        _buyFees = BuyFees({ devFee: newDevBuyFee, marketingFee: newMarketingBuyFee, liqFee: newLiquidityBuyFee, total: newTotalBuyFees});
-        emit SetBuyFees(newDevBuyFee, newMarketingBuyFee, newLiquidityBuyFee);
+        _devBuyFee = newDevBuyFee;
+        _marketingBuyFee = newMarketingBuyFee;
+        _liqBuyFee = newLiqBuyFee;
+        _totalBuyFees = newTotalBuyFees;
+
+        emit SetBuyFees(newDevBuyFee, newMarketingBuyFee, newLiqBuyFee);
     }
 
-    function setSellFees(uint8 newDevSellFee, uint8 newMarketingSellFee, uint8 newLiquiditySellFee) external onlyOwner {
-        uint8 newTotalSellFees = newDevSellFee + newMarketingSellFee + newLiquiditySellFee;
+    function setSellFees(uint8 newDevSellFee, uint8 newMarketingSellFee, uint8 newLiqSellFee) external onlyOwner {
+        uint8 newTotalSellFees = newDevSellFee + newMarketingSellFee + newLiqSellFee;
         require(!inSwapAndLiquify, "inSwapAndLiquify");
         require(newDevSellFee <= _maxDevFee, "Cannot set dev fee higher than max");
         require(newTotalSellFees <= _maxFees, "Cannot set total sell fees higher than max");
 
-        _sellFees = SellFees({ devFee: newDevSellFee, marketingFee: newMarketingSellFee, liqFee: newLiquiditySellFee, total: newTotalSellFees});
-        emit SetSellFees(newDevSellFee, newMarketingSellFee, newLiquiditySellFee);
+        _devSellFee = newDevSellFee;
+        _marketingSellFee = newMarketingSellFee;
+        _liqSellFee = newLiqSellFee;
+        _totalSellFees = newTotalSellFees;
+
+        emit SetSellFees(newDevSellFee, newMarketingSellFee, newLiqSellFee);
     }
 
     function setLiquifyThreshhold(uint256 newLiquifyThreshhold) external onlyOwner() {
@@ -128,7 +139,7 @@ abstract contract Taxable is Context, Ownable, Tradable {
     }
 
     function transfer(address recipient, uint256 amount) public override returns (bool) {
-        _transferWithTaxes(_msgSender(), recipient, amount);
+        _transferWithTaxes(msg.sender, recipient, amount);
         return true;
     }
 
@@ -160,14 +171,14 @@ abstract contract Taxable is Context, Ownable, Tradable {
         }
 
         // Send fees to contract if necessary
-        TxType txType = TxType.NONE;
-        if (from == pair) txType = TxType.BUY;
-        if (to == pair) txType = TxType.SELL;
+        uint8 txType = 0;
+        if (from == pair) txType = BUYTX;
+        if (to == pair) txType = SELLTX;
         if(
-            txType != TxType.NONE &&
+            txType != 0 &&
             !(_isExcludedFromFees[from] || _isExcludedFromFees[to])
-            && ((txType == TxType.BUY && _buyFees.total > 0)
-            || (txType == TxType.SELL && _sellFees.total > 0))
+            && ((txType == BUYTX && _totalBuyFees > 0)
+            || (txType == SELLTX && _totalSellFees > 0))
         ) {
             uint256 feesToContract = calculateTotalFees(amount, txType);
             
@@ -180,19 +191,19 @@ abstract contract Taxable is Context, Ownable, Tradable {
         transferTokens(from, to, amount);
     }
 
-    function calculateTotalFees(uint256 amount, TxType txType) private returns (uint256) {
+    function calculateTotalFees(uint256 amount, uint8 txType) private returns (uint256) {
         (uint256 devTokens, uint256 marketingTokens, uint256 liqTokens) = (0, 0, 0);
 
-        if (txType == TxType.BUY) {
-            devTokens = amount.mul(_buyFees.devFee).div(100);
-            marketingTokens = amount.mul(_buyFees.marketingFee).div(100);
-            liqTokens = amount.mul(_buyFees.liqFee).div(100);
+        if (txType == BUYTX) {
+            devTokens = amount.mul(_devBuyFee).div(100);
+            marketingTokens = amount.mul(_marketingBuyFee).div(100);
+            liqTokens = amount.mul(_liqBuyFee).div(100);
         }
 
-        if (txType == TxType.SELL) {
-            devTokens = amount.mul(_sellFees.devFee).div(100);
-            marketingTokens = amount.mul(_sellFees.marketingFee).div(100);
-            liqTokens = amount.mul(_sellFees.liqFee).div(100);
+        if (txType == SELLTX) {
+            devTokens = amount.mul(_devSellFee).div(100);
+            marketingTokens = amount.mul(_marketingSellFee).div(100);
+            liqTokens = amount.mul(_liqSellFee).div(100);
         }
 
         _devTokensCollected = _devTokensCollected.add(devTokens);

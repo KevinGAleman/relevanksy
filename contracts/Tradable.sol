@@ -9,17 +9,15 @@
 
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./IDEXFactory.sol";
 import "./IDEXRouter.sol";
 
-abstract contract Tradable is Context, IERC20, Ownable {
+abstract contract Tradable is IERC20, Ownable {
     using SafeMath for uint256;
-	using Address for address;
 
     struct TokenDistribution {
         uint256 totalSupply;
@@ -87,7 +85,7 @@ abstract contract Tradable is Context, IERC20, Ownable {
         uint256 newMaxBalance = _totalSupply.mul(newMaxBalancePercentage).div(100);
 
         require(newMaxBalance != _maxBalance, "Cannot set new max balance to the same value as current max balance");
-        require(newMaxBalance >= _totalSupply.mul(2).div(1000), "Cannot set max balance lower than 2 percent");
+        require(newMaxBalance >= _totalSupply.mul(2).div(100), "Cannot set max balance lower than 2 percent");
 
         _maxBalance = newMaxBalance;
     }
@@ -125,32 +123,30 @@ abstract contract Tradable is Context, IERC20, Ownable {
     function getOwner() external view returns (address) { return owner(); }
     function balanceOf(address account) public view override returns (uint256) { return _balances[account]; }
     function allowance(address owner, address spender) external view override returns (uint256) { return _allowances[owner][spender]; }
-    function maxBalance() external view returns (uint256) { return _maxBalance; }
-    function maxTx() external view returns (uint256) { return _maxTx; }
 
     function approve(address spender, uint256 amount) public override returns (bool) {
-        _approve(_msgSender(), spender, amount);
+        _approve(msg.sender, spender, amount);
         return true;
     }
 
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
+        _transfer(msg.sender, recipient, amount);
         return true;
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
     }
 
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        _approve(msg.sender, spender, _allowances[msg.sender][spender].add(addedValue));
         return true;
     }
 
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        _approve(msg.sender, spender, _allowances[msg.sender][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
         return true;
     }
 
@@ -179,15 +175,8 @@ abstract contract Tradable is Context, IERC20, Ownable {
             require(balanceOf(to).add(amount) <= _maxBalance, "Tx would cause recipient to exceed max balance");
         }
 
-        transferToken(from, to, amount);
-    }
-
-    function transferToken(address sender, address recipient, uint256 amount) private {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
+        _balances[from] = _balances[from].sub(amount, "ERC20: transfer amount exceeds balance");
+        _balances[to] = _balances[to].add(amount);
+        emit Transfer(from, to, amount);
     }
 }

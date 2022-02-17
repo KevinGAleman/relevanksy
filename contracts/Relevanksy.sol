@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 /**
-    #RSY
+    #R
 
-    Relevanksy ($RSY) is the gateway currency to The Relevanksy Collection,
+    Relevanksy ($R) is the gateway currency to The Relevanksy Collection,
     an exclusive and limited NFT collection designed to provide valuable
     social commentary on the degen crypto space in the form of individual pieces
     of art, sold exclusively on the Relevanksy website.
 
-    $RSY tokenomics:
+    $R tokenomics:
     Dynamic dev tax, not to exceed 2%
     Dynamic buy/sell taxes for marketing and liquidity,
     not to exceed 12% total (incl dev tax)
@@ -16,53 +16,48 @@
 
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./DevOwnable.sol";
 import "./Taxable.sol";
 import "./Tradable.sol";
 
-contract Relevanksy is Context, Ownable, DevOwnable, Taxable {
+contract Relevanksy is Context, Ownable, Taxable {
 	using SafeMath for uint256;
 	using Address for address;
 
-    string private _RSYname = "Relevanksy";
-    string private _RSYsymbol = "RSY";
+    string private _Rname = "Relevanksy";
+    string private _Rsymbol = "RSY";
     // 9 Decimals
-    uint8 private _RSYdecimals = 9;
+    uint8 private _Rdecimals = 9;
     // 1B Supply
-    uint256 private _RSYtotalSupply = 10**9 * 10**_RSYdecimals;
+    uint256 private _RtotalSupply = 10**9 * 10**_Rdecimals;
     // 2% Max Wallet
-    uint256 private _RSYmaxBalance = _RSYtotalSupply.mul(2).div(100);
+    uint256 private _RmaxBalance = _RtotalSupply.mul(2).div(100);
     // 0.5% Max Transaction
-    uint256 private _RSYmaxTx = _RSYtotalSupply.mul(5).div(1000);
+    uint256 private _RmaxTx = _RtotalSupply.mul(5).div(1000);
     // 12% Max Fees
-    uint8 private _RSYmaxFees = 12;
+    uint8 private _RmaxFees = 12;
     // 2% Max Dev Fee
-    uint8 private _RSYmaxDevFee = 2;
+    uint8 private _RmaxDevFee = 2;
     // Contract sell at 3M tokens
-    uint256 private _RSYliquifyThreshhold = 3 * 10**6 * 10**_RSYdecimals;
-    TokenDistribution private _RSYtokenDistribution = 
-        TokenDistribution({ totalSupply: _RSYtotalSupply, decimals: _RSYdecimals, maxBalance: _RSYmaxBalance, maxTx: _RSYmaxTx });
-    BuyFees private _RSYbuyFees = 
-        BuyFees({ devFee: 2, marketingFee: 5, liqFee: 5, total: 12 });
-    SellFees private _RSYsellFees =
-        SellFees({ devFee: 2, marketingFee: 5, liqFee: 5, total: 12 });
+    uint256 private _RliquifyThreshhold = 3 * 10**6 * 10**_Rdecimals;
+    TokenDistribution private _RtokenDistribution = 
+        TokenDistribution({ totalSupply: _RtotalSupply, decimals: _Rdecimals, maxBalance: _RmaxBalance, maxTx: _RmaxTx });
+    // Buy and sell fees will start at 99% to prevent bots/snipers at launch, 
+    // but will not be allowed to be set this high ever again.
+    uint8 private _RdevBuyFee = 2;
+    uint8 private _RmarketingBuyFee = 31;
+    uint8 private _RliqBuyFee = 66;
+    uint8 private _RdevSellFee = 2;
+    uint8 private _RmarketingSellFee = 31;
+    uint8 private _RliqSellFee = 66;
 
     constructor () 
-    Taxable(_RSYsymbol, _RSYname, _RSYtokenDistribution, _RSYbuyFees, _RSYsellFees, _RSYmaxFees, _RSYmaxDevFee, _RSYliquifyThreshhold) {
+    Taxable(_Rsymbol, _Rname, _RtokenDistribution, _RdevBuyFee, _RmarketingBuyFee, _RliqBuyFee, _RdevSellFee, 
+            _RmarketingSellFee, _RliqSellFee, _RmaxFees, _RmaxDevFee, _RliquifyThreshhold) {
         _balances[_msgSender()] = _totalSupply;
         emit Transfer(address(0), _msgSender(), _totalSupply);
-    }
-
-    function changeTokenName(string memory newName) external onlyDevs {
-        _name = newName;
-    }
-    
-    function changeTokenSymbol(string memory newSymbol) external onlyDevs {
-        _symbol = newSymbol;
     }
 }
