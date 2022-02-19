@@ -97,39 +97,39 @@ describe("Relevanksy", function () {
         );
     });
 
-    // it("Should change fee percentages when called by the owner", async function () {
-    //     await relevanksy.setBuyFees(2, 4, 4);
-    //     await relevanksy.setSellFees(2, 4, 4);
+    it("Should change fee percentages when called by the owner", async function () {
+        await relevanksy.setBuyFees(2, 4, 4);
+        await relevanksy.setSellFees(2, 4, 4);
 
-    //     expect(await relevanksy._totalBuyFees()).to.equal(10);
-    //     expect(await relevanksy._totalSellFees()).to.equal(10);
-    // });
+        expect(await relevanksy._totalBuyFees()).to.equal(10);
+        expect(await relevanksy._totalSellFees()).to.equal(10);
+    });
 
-    // it("Should change max balance and max transaction percentages when called by the owner", async function () {
-    //     await relevanksy.setMaxBalancePercentage(3);
-    //     await relevanksy.setMaxTxPercentage(10);
+    it("Should change max balance and max transaction percentages when called by the owner", async function () {
+        await relevanksy.setMaxBalancePercentage(3);
+        await relevanksy.setMaxTxPercentage(10);
 
-    //     expect(await relevanksy._maxBalance()).to.equal(ethers.utils.parseUnits("3", 16));
-    //     expect(await relevanksy._maxTx()).to.equal(ethers.utils.parseUnits("10", 15));
-    // });
+        expect(await relevanksy._maxBalance()).to.equal(ethers.utils.parseUnits("3", 16));
+        expect(await relevanksy._maxTx()).to.equal(ethers.utils.parseUnits("10", 15));
+    });
 
-    // it("Should not allow fees to be set higher than expected", async function () {
-    //     await expect(relevanksy.setBuyFees(3, 3, 3)).to.be.revertedWith("");
-    //     await expect(relevanksy.setSellFees(3, 3, 3)).to.be.revertedWith("");
-    //     await expect(relevanksy.setBuyFees(1, 30, 30)).to.be.revertedWith("");
-    //     await expect(relevanksy.setSellFees(1, 30, 30)).to.be.revertedWith("");
+    it("Should not allow fees to be set higher than expected", async function () {
+        await expect(relevanksy.setBuyFees(3, 3, 3)).to.be.revertedWith("");
+        await expect(relevanksy.setSellFees(3, 3, 3)).to.be.revertedWith("");
+        await expect(relevanksy.setBuyFees(1, 30, 30)).to.be.revertedWith("");
+        await expect(relevanksy.setSellFees(1, 30, 30)).to.be.revertedWith("");
 
-    //     expect(await relevanksy._totalBuyFees()).to.equal(10);
-    //     expect(await relevanksy._totalSellFees()).to.equal(10);
-    // });
+        expect(await relevanksy._totalBuyFees()).to.equal(10);
+        expect(await relevanksy._totalSellFees()).to.equal(10);
+    });
 
-    // it("Should not allow max transaction and max balance percentages to be set too low", async function () {
-    //     await expect(relevanksy.setMaxBalancePercentage(1)).to.be.revertedWith("");
-    //     await expect(relevanksy.setMaxTxPercentage(4)).to.be.revertedWith("");
+    it("Should not allow max transaction and max balance percentages to be set too low", async function () {
+        await expect(relevanksy.setMaxBalancePercentage(1)).to.be.revertedWith("");
+        await expect(relevanksy.setMaxTxPercentage(4)).to.be.revertedWith("");
 
-    //     expect(await relevanksy._maxBalance()).to.equal(ethers.utils.parseUnits("3", 16));
-    //     expect(await relevanksy._maxTx()).to.equal(ethers.utils.parseUnits("10", 15));
-    // });
+        expect(await relevanksy._maxBalance()).to.equal(ethers.utils.parseUnits("3", 16));
+        expect(await relevanksy._maxTx()).to.equal(ethers.utils.parseUnits("10", 15));
+    });
 
 // Test totalSupply, taxes, other default values
 });
