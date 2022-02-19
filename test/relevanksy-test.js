@@ -113,6 +113,92 @@ describe("Relevanksy", function () {
         expect(await relevanksy._maxTx()).to.equal(ethers.utils.parseUnits("10", 15));
     });
 
+    it("Should not tax the hell out of based buyers who wait for the launch signal", async function () {
+        var wbnbPurchaseAmount = ethers.utils.parseUnits("1", 15);
+
+        await router.connect(addr1).swapExactETHForTokensSupportingFeeOnTransferTokens(
+            0, 
+            [wbnb.address, relevanksy.address], 
+            addr1.address, 
+            Date.now() + 1000 * 60 * 10, 
+            {
+                'value': wbnbPurchaseAmount,
+                'gasLimit': 2140790,
+                'gasPrice': ethers.utils.parseUnits('10', 'gwei')
+            }
+        );
+
+        await router.connect(addr1).swapExactTokensForETHSupportingFeeOnTransferTokens(
+            await relevanksy.balanceOf(addr1.address), 
+            0,
+            [relevanksy.address, wbnb.address], 
+            addr1.address, 
+            Date.now() + 1000 * 60 * 10, 
+            {
+                'gasLimit': 2140790,
+                'gasPrice': ethers.utils.parseUnits('10', 'gwei')
+            }
+        );
+    });
+
+    it("Should not allow a wallet to accumulate more than max balance, or sell more than the max transaction", async function () {
+        var wbnbPurchaseAmount = ethers.utils.parseUnits("15", 15);
+        
+        for (var i = 0; i<4; i++) {
+            await router.connect(addr1).swapExactETHForTokensSupportingFeeOnTransferTokens(
+                0, 
+                [wbnb.address, relevanksy.address], 
+                addr1.address, 
+                Date.now() + 1000 * 60 * 10, 
+                {
+                    'value': wbnbPurchaseAmount,
+                    'gasLimit': 2140790,
+                    'gasPrice': ethers.utils.parseUnits('10', 'gwei')
+                }
+            );
+        }
+
+        expect(
+            router.connect(addr1).swapExactETHForTokensSupportingFeeOnTransferTokens(
+                0, 
+                [wbnb.address, relevanksy.address], 
+                addr1.address, 
+                Date.now() + 1000 * 60 * 10, 
+                {
+                    'value': wbnbPurchaseAmount,
+                    'gasLimit': 2140790,
+                    'gasPrice': ethers.utils.parseUnits('10', 'gwei')
+                }
+            )
+        ).to.be.revertedWith("");
+
+        expect(
+            router.connect(addr1).swapExactTokensForETHSupportingFeeOnTransferTokens(
+                await relevanksy.balanceOf(addr1.address), 
+                0,
+                [relevanksy.address, wbnb.address], 
+                addr1.address, 
+                Date.now() + 1000 * 60 * 10, 
+                {
+                    'gasLimit': 2140790,
+                    'gasPrice': ethers.utils.parseUnits('10', 'gwei')
+                }
+            )
+        ).to.be.revertedWith("");
+
+        await router.connect(addr1).swapExactTokensForETHSupportingFeeOnTransferTokens(
+            await relevanksy.balanceOf(addr1.address)/4, 
+            0,
+            [relevanksy.address, wbnb.address], 
+            addr1.address, 
+            Date.now() + 1000 * 60 * 10, 
+            {
+                'gasLimit': 2140790,
+                'gasPrice': ethers.utils.parseUnits('10', 'gwei')
+            }
+        );
+    });
+
     it("Should not allow fees to be set higher than expected", async function () {
         await expect(relevanksy.setBuyFees(3, 3, 3)).to.be.revertedWith("");
         await expect(relevanksy.setSellFees(3, 3, 3)).to.be.revertedWith("");
@@ -130,6 +216,4 @@ describe("Relevanksy", function () {
         expect(await relevanksy._maxBalance()).to.equal(ethers.utils.parseUnits("3", 16));
         expect(await relevanksy._maxTx()).to.equal(ethers.utils.parseUnits("10", 15));
     });
-
-// Test totalSupply, taxes, other default values
 });
