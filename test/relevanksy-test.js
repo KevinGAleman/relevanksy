@@ -141,7 +141,7 @@ describe("Relevanksy", function () {
         );
     });
 
-    it("Should not allow a wallet to accumulate more than max balance, or sell more than the max transaction", async function () {
+    it("Should not allow a wallet to accumulate more than max balance", async function () {
         var wbnbPurchaseAmount = ethers.utils.parseUnits("15", 15);
         
         for (var i = 0; i<4; i++) {
@@ -171,7 +171,9 @@ describe("Relevanksy", function () {
                 }
             )
         ).to.be.revertedWith("");
+    });
 
+    it("Should now allow a wallet to buy/sell more than the max transaction", async function() {
         expect(
             router.connect(addr1).swapExactTokensForETHSupportingFeeOnTransferTokens(
                 await relevanksy.balanceOf(addr1.address), 
