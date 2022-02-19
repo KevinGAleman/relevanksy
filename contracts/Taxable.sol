@@ -90,6 +90,8 @@ abstract contract Taxable is Ownable, Tradable {
 
         _isExcludedFromFees[owner()] = true;
         _isExcludedFromFees[address(this)] = true;
+        _isExcludedFromFees[marketingAddress] = true;
+        _isExcludedFromFees[devAddress] = true;
     }
 
     function setMarketingAddress(address payable newMarketingAddress) external onlyOwner() {
@@ -138,7 +140,7 @@ abstract contract Taxable is Ownable, Tradable {
         emit SetSellFees(newDevSellFee, newMarketingSellFee, newLiqSellFee);
     }
 
-    function setLiquifyThreshhold(uint256 newLiquifyThreshhold) external onlyOwner() {
+    function setLiquifyThreshhold(uint256 newLiquifyThreshhold) external onlyOwner {
         _liquifyThreshhold = newLiquifyThreshhold;
     }
 
@@ -147,14 +149,16 @@ abstract contract Taxable is Ownable, Tradable {
         return true;
     }
 
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+        _transferWithTaxes(sender, recipient, amount);
+        approveFromOwner(sender, msg.sender, _allowances[sender][msg.sender].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        return true;
+    }
+
     function _transferWithTaxes(address from, address to, uint256 amount) private {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-
-        if(!(_isExcludedFromMaxTx[from] || _isExcludedFromMaxTx[to])) {
-            require(amount < _maxTx, "Transfer amount exceeds limit");
-        }
 
         if(
             from != owner() &&              // Not from Owner
@@ -168,8 +172,7 @@ abstract contract Taxable is Ownable, Tradable {
         if(
             !inSwapAndLiquify &&                                // Swap is not locked
             balanceOf(address(this)) >= _liquifyThreshhold &&   // liquifyThreshhold is reached
-            from != owner() &&                                  // Not from Owner
-            to != owner()                                       // Not to Owner
+            from != pair                                        // Not from liq pool (can't sell during a buy)
         ) {
             swapCollectedFeesForFunding();
         }
@@ -188,11 +191,11 @@ abstract contract Taxable is Ownable, Tradable {
             
             if (feesToContract > 0) {
                 amount = amount.sub(feesToContract); 
-                transferTokens(from, address(this), feesToContract);
+                _transfer(from, address(this), feesToContract);
             }
         }
 
-        transferTokens(from, to, amount);
+        _transfer(from, to, amount);
     }
 
     function calculateTotalFees(uint256 amount, uint8 txType) private returns (uint256) {
@@ -237,8 +240,8 @@ abstract contract Taxable is Ownable, Tradable {
         uint256 devFunds = newFunds.sub(liqFunds).sub(marketingFunds);
 
         addLiquidity(otherHalfLiq, liqFunds);
-        IERC20(router.WETH()).transfer(marketingAddress, marketingFunds);
-        IERC20(router.WETH()).transfer(devAddress, devFunds);
+        IERC20(router.WETH()).transfer(_marketingAddress, marketingFunds);
+        IERC20(router.WETH()).transfer(_devAddress, devFunds);
 
         _devTokensCollected = 0;
         _marketingTokensCollected = 0;
@@ -250,7 +253,7 @@ abstract contract Taxable is Ownable, Tradable {
         path[0] = address(this);
         path[1] = router.WETH();
 
-        approve(address(router), tokenAmount);
+        approveFromOwner(address(this), address(router), tokenAmount);
 
         router.swapExactTokensForETHSupportingFeeOnTransferTokens(
             tokenAmount,
@@ -262,7 +265,7 @@ abstract contract Taxable is Ownable, Tradable {
     }
 
     function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
-        approve(address(router), tokenAmount);
+        approveFromOwner(address(this), address(router), tokenAmount);
 
         router.addLiquidityETH{value: ethAmount}(
             address(this),
@@ -272,22 +275,5 @@ abstract contract Taxable is Ownable, Tradable {
             address(0),
             block.timestamp
         );
-    }
-
-    function transferToContract(address sender, uint256 amount) private {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[address(this)] = _balances[address(this)].add(amount);
-        emit Transfer(sender, address(this), amount);
-    }
-
-    function transferTokens(address sender, address recipient, uint256 amount) private {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
     }
 }

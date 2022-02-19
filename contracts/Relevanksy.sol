@@ -53,9 +53,11 @@ contract Relevanksy is Context, Ownable, Taxable {
     uint8 private _RdevSellFee = 2;
     uint8 private _RmarketingSellFee = 31;
     uint8 private _RliqSellFee = 66;
-    // TODO
-    address payable _RdevAddress = address(0x0);
-    address payable _RmarketingAddress = address(0x0);
+    // TODO VERY IMPORTANT! These are testnet wallets
+    address devWallet = address(0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65);
+    address payable _RdevAddress = payable(devWallet);
+    address marketingWallet = address(0x90F79bf6EB2c4f870365E785982E1f101E93b906);
+    address payable _RmarketingAddress = payable(marketingWallet);
 
     constructor () 
     Taxable(_Rsymbol, _Rname, _RtokenDistribution, _RdevAddress, _RmarketingAddress, _RdevBuyFee, _RmarketingBuyFee, 
