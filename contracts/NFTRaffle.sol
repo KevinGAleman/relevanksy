@@ -13,6 +13,7 @@ pragma solidity ^0.8.0;
 
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -46,6 +47,15 @@ contract NFTRaffle is VRFConsumerBase, Ownable {
 
     // To recieve BNB
     receive() external payable {}
+
+    // If you need to withdraw BNB, tokens, or anything else that's been sent to the contract
+    function withdrawToken(address _tokenContract, uint256 _amount) external onlyOwner {
+        IERC20 tokenContract = IERC20(_tokenContract);
+        
+        // transfer the token from address of this contract
+        // to address of the user (executing the withdrawToken() function)
+        tokenContract.transfer(msg.sender, _amount);
+    }
 
     function setupRaffle() external onlyOwner {
 
@@ -86,7 +96,4 @@ contract NFTRaffle is VRFConsumerBase, Ownable {
     function distributePrizes() private {
 
     }
-
-    // TODO
-    // function withdrawLink() external onlyOwner {} - Implement a withdraw function to avoid locking your LINK in the contract
 }
