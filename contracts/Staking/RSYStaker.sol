@@ -71,7 +71,7 @@ contract RSYStaker is IStakingRewards, RewardsDistributionRecipient, ReentrancyG
         }
         return
             _rewardPerTokenStored.add(
-                lastTimeRewardApplicable().sub(_lastUpdateTime).mul(_rewardRate).mul(1e18).div(_totalSupply)
+                lastTimeRewardApplicable().sub(_lastUpdateTime).mul(_rewardRate).mul(1e9).div(_totalSupply)
             );
     }
 
@@ -130,7 +130,13 @@ contract RSYStaker is IStakingRewards, RewardsDistributionRecipient, ReentrancyG
         // This keeps the reward rate in the right range, preventing overflows due to
         // very high values of rewardRate in the earned and rewardsPerToken functions;
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
-        uint balance = _rewardsToken.balanceOf(address(this));
+        uint balance;
+        if (_rewardsToken == _stakingToken) {
+            balance = _rewardsToken.balanceOf(address(this)).sub(_totalSupply);
+        } else {
+            balance = _rewardsToken.balanceOf(address(this));
+        }
+
         require(_rewardRate <= balance.div(_rewardsDuration), "Provided reward too high");
 
         _lastUpdateTime = block.timestamp;
