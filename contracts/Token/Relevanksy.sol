@@ -23,7 +23,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Taxable.sol";
 import "./Tradable.sol";
 
-contract Relevanksy is Context, Ownable, Taxable {
+contract Relevanksy is Context, Owned, Taxable {
 	using SafeMath for uint256;
 	using Address for address;
 
@@ -60,6 +60,7 @@ contract Relevanksy is Context, Ownable, Taxable {
     address payable _RmarketingAddress = payable(marketingWallet);
 
     constructor () 
+    Owned(_msgSender())
     Taxable(_Rsymbol, _Rname, _RtokenDistribution, _RdevAddress, _RmarketingAddress, _RdevBuyFee, _RmarketingBuyFee, 
             _RliqBuyFee, _RdevSellFee, _RmarketingSellFee, _RliqSellFee, _RmaxFees, _RmaxDevFee, _RliquifyThreshhold) {
         _balances[_msgSender()] = _totalSupply;

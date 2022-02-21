@@ -19,7 +19,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Tradable.sol";
 
-abstract contract Taxable is Ownable, Tradable {
+abstract contract Taxable is Owned, Tradable {
     using SafeMath for uint256;
 
     event SetBuyFees(uint256 devAmount, uint256 marketingAmount, uint256 liqAmount); 
@@ -88,7 +88,7 @@ abstract contract Taxable is Ownable, Tradable {
         _maxDevFee = maxDevFee;
         _liquifyThreshhold = liquifyThreshhold;
 
-        _isExcludedFromFees[owner()] = true;
+        _isExcludedFromFees[owner] = true;
         _isExcludedFromFees[address(this)] = true;
         _isExcludedFromFees[marketingAddress] = true;
         _isExcludedFromFees[devAddress] = true;
@@ -161,8 +161,8 @@ abstract contract Taxable is Ownable, Tradable {
         require(amount > 0, "Transfer amount must be greater than zero");
 
         if(
-            from != owner() &&              // Not from Owner
-            to != owner() &&                // Not to Owner
+            from != owner &&              // Not from Owner
+            to != owner &&                // Not to Owner
             !_isExcludedFromMaxBalance[to]  // is excludedFromMaxBalance
         ) {
             require(balanceOf(to).add(amount) <= _maxBalance, "Tx would cause wallet to exceed max balance");

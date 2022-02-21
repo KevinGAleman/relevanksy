@@ -14,8 +14,9 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./IDEXFactory.sol";
 import "./IDEXRouter.sol";
+import "../Utils/Owned.sol";
 
-abstract contract Tradable is IERC20, Ownable {
+abstract contract Tradable is IERC20, Owned {
     using SafeMath for uint256;
 
     struct TokenDistribution {
@@ -55,11 +56,11 @@ abstract contract Tradable is IERC20, Ownable {
         router = IDEXRouter(0xD99D1c33F9fC3444f8101754aBC46c52416550D1); //Testnet 
         pair = IDEXFactory(router.factory()).createPair(router.WETH(), address(this)); // Create a uniswap pair for this new token
 
-        _isExcludedFromMaxBalance[owner()] = true;
+        _isExcludedFromMaxBalance[owner] = true;
         _isExcludedFromMaxBalance[address(this)] = true;
         _isExcludedFromMaxBalance[pair] = true;
 
-        _isExcludedFromMaxTx[owner()] = true;
+        _isExcludedFromMaxTx[owner] = true;
         _isExcludedFromMaxTx[address(this)] = true;
     }
 
@@ -128,7 +129,6 @@ abstract contract Tradable is IERC20, Ownable {
     function decimals() external view returns (uint8) { return _decimals; }
     function symbol() external view returns (string memory) { return _symbol; }
     function name() external view returns (string memory) { return _name; }
-    function getOwner() external view returns (address) { return owner(); }
     function balanceOf(address account) public view override returns (uint256) { return _balances[account]; }
     function allowance(address owner, address spender) external view override returns (uint256) { return _allowances[owner][spender]; }
 
@@ -163,12 +163,12 @@ abstract contract Tradable is IERC20, Ownable {
         return true;
     }
 
-    function _approve(address owner, address spender, uint256 amount) private {
-        require(owner != address(0), "ERC20: approve from the zero address");
+    function _approve(address holder, address spender, uint256 amount) private {
+        require(holder != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
+        _allowances[holder][spender] = amount;
+        emit Approval(holder, spender, amount);
     }
 
     function _transfer(address from, address to, uint256 amount) internal {
@@ -181,8 +181,8 @@ abstract contract Tradable is IERC20, Ownable {
         }
 
         if(
-            from != owner() &&              // Not from Owner
-            to != owner() &&                // Not to Owner
+            from != owner &&              // Not from Owner
+            to != owner &&                // Not to Owner
             !_isExcludedFromMaxBalance[to]  // is excludedFromMaxBalance
         ) {
             require(balanceOf(to).add(amount) <= _maxBalance, "Tx would cause recipient to exceed max balance");
