@@ -14,7 +14,7 @@ abstract contract Raffleable is Ownable {
         _raffleContract = raffleContract;
     }
 
-    function setMinters(address[] calldata newMinters) external {
+    function setNewMinters(address[] calldata newMinters) external {
         require (_msgSender() == _raffleContract || _msgSender() == owner(), "Only the raffle contract or owner can set the winners of mint allowList");
         delete _allowListed;
 
