@@ -16,25 +16,40 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../NFT/IRaffleable.sol";
 
 contract NFTRaffle is VRFConsumerBase, Ownable {
     using Address for address;
     using SafeMath for uint256;
 
+    // Chainlink VRF
     bytes32 internal keyHash;
     uint256 internal fee;
 
-    uint256 public numPrizes;
-    uint256 public tokensPerEntry;
-    uint256 public raffleEndBlock;
+    // TODO set who gets the platform fees
+    address public _platformFeeReceiver = address(0x0);
+    uint8 constant _platformFeePercentage = 10;
 
-    uint256 public totalEntries;
-    bool public raffleFinished = false;
-    address[] public entries;
-    mapping (address => uint256) public participantsEntries;
-    address[] public winners;
+    // NFT Creator
+    address public _creator;
+
+    // Raffle currency and raffle prize
+    IERC20 public _raffleCurrency;
+    IRaffleable public _rafflePrize;
+
+    // Raffle Details
+    uint256 public _numPrizes;
+    uint256 public _tokensPerEntry;
+    uint256 public _raffleStartTime;
+    uint256 public _raffleEndTime;
+
+    bool public _raffleFinished = true;
+
+    // Tracking the raffle
+    address[] public _entries;
+    address[] public _winners;
         
-    constructor() 
+    constructor(address raffleCurrencyAddress, address rafflePrizeAddress, uint256 numPrizes, uint256 tokensPerEntry, uint numDays) 
         VRFConsumerBase(
             0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9, // VRF Coordinator
             0xa36085F69e2889c224210F603D836748e7dC0088  // LINK Token
@@ -43,6 +58,12 @@ contract NFTRaffle is VRFConsumerBase, Ownable {
         keyHash = 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4;
         fee = 0.1 * 10 ** 18; // 0.1 LINK (Varies by network)
 
+        _raffleCurrency = IERC20(raffleCurrencyAddress);
+        _rafflePrize = IRaffleable(rafflePrizeAddress);
+        _numPrizes = numPrizes;
+        _tokensPerEntry = tokensPerEntry;
+        _raffleStartTime = block.timestamp;
+        _raffleEndTime = block.timestamp + (numDays * 1 days);
     }
 
     // To recieve BNB
@@ -57,20 +78,23 @@ contract NFTRaffle is VRFConsumerBase, Ownable {
         tokenContract.transfer(msg.sender, _amount);
     }
 
-    function setupRaffle() external onlyOwner {
-
-    }
-
-    function extendRaffle() external onlyOwner {
-
+    // TODO implement scheduling this call based on raffleEndTime
+    function endRaffle() external onlyOwner {
+        chooseWinners();
     }
 
     function enterRaffle(uint256 numEntries) external {
-        require(!raffleFinished, "This raffle has completed");
+        require(!_raffleFinished, "This raffle has completed");
 
         // Implement token transfer here
-
-        participantsEntries[msg.sender].add(numEntries);
+        uint256 numTokensToEnter = numEntries.mul(_tokensPerEntry);
+        _raffleCurrency.approve(address(this), numTokensToEnter);
+        _raffleCurrency.transferFrom(_msgSender(), address(this), numTokensToEnter);
+        
+        // Give this address a spot in the entries list for every ticket they purchased
+        for (uint256 i = 0; i < numEntries; i++) {
+            _entries.push(_msgSender());
+        }
     }
 
     function chooseWinners() private returns (bytes32 requestId) {
@@ -79,21 +103,28 @@ contract NFTRaffle is VRFConsumerBase, Ownable {
     }
 
     function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
-        uint256 randomResult = randomness % entries.length;
+        uint256 randomResult = randomness % _entries.length;
         
         // Get random numbers equivalent to the number of prizes
         // using the first random number as a seed
-        for (uint256 i = 0; i < numPrizes; i++) {
+        for (uint256 i = 0; i < _numPrizes; i++) {
             uint256 winningID = uint256(keccak256(abi.encode(randomResult, i)));
-            winners.push(entries[winningID]);
+            _winners.push(_entries[winningID]);
         }
 
-        distributePrizes();
+        // Tell the raffle prize contract who is allowed to mint this batch of prizes.
+        _rafflePrize.setNewMinters(_winners);
 
-        raffleFinished = true;
+        distributeProceeds();
+
+        _raffleFinished = true;
     }
 
-    function distributePrizes() private {
+    function distributeProceeds() internal {
+        uint256 feeToPlatform = _raffleCurrency.balanceOf(address(this)).mul(_platformFeePercentage).div(100);
+        uint256 feeToCreator = _raffleCurrency.balanceOf(address(this)).sub(feeToPlatform);
 
+        _raffleCurrency.transfer(_platformFeeReceiver, feeToPlatform);
+        _raffleCurrency.transfer(_creator, feeToCreator);
     }
 }
