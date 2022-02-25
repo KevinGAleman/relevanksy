@@ -6,24 +6,22 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "./Raffleable.sol";
 
-contract RelevanksyNFT is ERC721, Ownable {
+contract RelevanksyNFT is ERC721, Ownable, Raffleable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
+    string private _name = "the relevanksy collection";
+    string private _symbol = "$trc";
+
     uint256 constant _maxNFTs = 1000;
 
-    address[] _allowListed;
-    address private _raffleContract;
     mapping (uint256 => string) private _tokenURIs;
     string private _baseURIextended;
 
-    constructor(string memory tokenName, string memory symbol) ERC721(tokenName, symbol) {
+    constructor() ERC721(_name, _symbol) {
         _setBaseURI("ipfs://");
-    }
-
-    function _setRaffleContract(address raffleContract) external onlyOwner {
-        _raffleContract = raffleContract;
     }
 
     function _setBaseURI(string memory baseURI_) public onlyOwner {
@@ -57,18 +55,10 @@ contract RelevanksyNFT is ERC721, Ownable {
         return string(abi.encodePacked(base, Strings.toString(tokenId)));
     }
 
-    function setMinters(address[] calldata newMinters) external {
-        require (_msgSender() == _raffleContract || _msgSender() == owner(), "Only the raffle contract can set the winners of mint allowList");
-        delete _allowListed;
-
-        _allowListed = newMinters;
-    }
-
-    function mintToken(address owner, string memory metadataURI)
-    public
-    returns (uint256)
+    function mintToken(address owner, string memory metadataURI) public manageRaffleEntry returns (uint256)
     {
         require(_tokenIds.current() <= _maxNFTs, "Cannot exceed the max NFTs for this collection!");
+
         _tokenIds.increment();
 
         uint256 id = _tokenIds.current();
