@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IRaffleable.sol";
 
-abstract contract Raffleable is Ownable {
+abstract contract Raffleable is IRaffleable, Ownable {
     address[] _allowListed;
     address private _raffleContract;
 
@@ -14,8 +15,7 @@ abstract contract Raffleable is Ownable {
         _raffleContract = raffleContract;
     }
 
-    function setNewMinters(address[] calldata newMinters) external {
-        require (_msgSender() == _raffleContract || _msgSender() == owner(), "Only the raffle contract or owner can set the winners of mint allowList");
+    function setNewMinters(address[] calldata newMinters) external override onlyRaffleManager {
         delete _allowListed;
 
         _allowListed = newMinters;
@@ -46,5 +46,10 @@ abstract contract Raffleable is Ownable {
 
         // Remove user from the allow list once they've minted
         _allowListed[uint256(index)] = address(0x0);
+    }
+
+    modifier onlyRaffleManager() {
+        require (_msgSender() == _raffleContract || _msgSender() == owner(), "Only the raffle contract or owner can set the winners of mint allowList");
+        _;
     }
 }
