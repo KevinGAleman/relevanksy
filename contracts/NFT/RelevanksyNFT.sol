@@ -13,9 +13,9 @@ contract RelevanksyNFT is ERC721, Ownable, Raffleable {
     Counters.Counter private _tokenIds;
 
     string private _name = "the relevanksy collection";
-    string private _symbol = "$trc";
+    string private _symbol = "trc";
 
-    uint256 constant _maxNFTs = 1000;
+    uint256 public constant _totalSupply = 1000;
 
     mapping (uint256 => string) private _tokenURIs;
     string private _baseURIextended;
@@ -55,14 +55,14 @@ contract RelevanksyNFT is ERC721, Ownable, Raffleable {
         return string(abi.encodePacked(base, Strings.toString(tokenId)));
     }
 
-    function mintToken(address owner, string memory metadataURI) public manageRaffleEntry returns (uint256)
+    function mintToken(string memory metadataURI) public manageRaffleEntry returns (uint256)
     {
-        require(_tokenIds.current() <= _maxNFTs, "Cannot exceed the max NFTs for this collection!");
+        require(_tokenIds.current() <= _totalSupply, "Cannot exceed the max NFTs for this collection!");
 
         _tokenIds.increment();
 
         uint256 id = _tokenIds.current();
-        _safeMint(owner, id);
+        _safeMint(_msgSender(), id);
         _setTokenURI(id, metadataURI);
 
         return id;
